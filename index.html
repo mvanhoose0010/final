@@ -14,7 +14,7 @@
       background: #ffffff;
       padding: 20px 30px;
       border-radius: 16px;
-      max-width: 700px;
+      max-width: 800px;
       margin: auto;
       box-shadow: 0 4px 20px rgba(0, 123, 255, 0.2);
     }
@@ -71,7 +71,6 @@
       background-color: #d9f0ff;
       border-radius: 8px;
       color: #003366;
-      transition: background-color 0.3s;
     }
 
     #list {
@@ -101,131 +100,112 @@
     button:hover {
       background-color: #005fa3;
     }
-
-    .hint {
-      font-size: 12px;
-      color: #555;
-      margin-top: -8px;
-      margin-bottom: 8px;
-    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Line/Machine Help</h2>
+    <h2>Line Batch Organizer</h2>
 
-    <div class="row">
-      <div class="field small">
-        <label for="prefix">Prefix</label>
-        <input type="text" id="prefix" maxlength="3" placeholder="e.g. PAX" tabindex="1">
+    <form id="lotForm" onsubmit="event.preventDefault(); addToList();">
+      <div class="row">
+        <div class="field small">
+          <label for="prefix">Prefix</label>
+          <input type="text" id="prefix" maxlength="3" placeholder="e.g. PAX" tabindex="1">
+        </div>
+        <div class="field">
+          <label for="body">Body</label>
+          <input type="text" id="body" placeholder="e.g. 080425" tabindex="2">
+        </div>
+        <div class="field small">
+          <label for="expiration">Exp. Month</label>
+          <input type="text" id="expiration" maxlength="2" placeholder="MM" tabindex="3">
+        </div>
       </div>
-      <div class="field">
-        <label for="body">Body</label>
-        <input type="text" id="body" placeholder="e.g. 080425" tabindex="2">
+
+      <div class="row">
+        <div class="field">
+          <label for="machine">Machine</label>
+          <select id="machine" tabindex="4">
+            <option value="BAM1">BAM1</option>
+            <option value="BAM2">BAM2</option>
+            <option value="ESS1">ESS1</option>
+            <option value="HS01">HS01</option>
+            <option value="HS02">HS02</option>
+            <option value="HS03">HS03</option>
+            <option value="HS04">HS04</option>
+            <option value="MFT1">MFT1</option>
+            <option value="HSMA">HSMA</option>
+            <option value="HSMB">HSMB</option>
+            <option value="WELDERS">WELDERS</option>
+          </select>
+        </div>
       </div>
-    </div>
 
-    <div class="row">
-      <div class="field">
-        <label for="machine">Machine</label>
-        <select id="machine" tabindex="3">
-          <option value="BAM1">BAM1</option>
-          <option value="BAM2">BAM2</option>
-          <option value="ESS1">ESS1</option>
-          <option value="HS01">HS01</option>
-          <option value="HS02">HS02</option>
-          <option value="HS03">HS03</option>
-          <option value="HS04">HS04</option>
-          <option value="MFT1">MFT1</option>
-          <option value="HSMA">HSMA</option>
-          <option value="HSMB">HSMB</option>
-          <option value="WELDERS">WELDERS</option>
-        </select>
-      </div>
-    </div>
+      <span id="preview"></span>
+      <button type="submit">Add to List</button>
+      <button type="button" onclick="copyList()">Copy All</button>
+    </form>
 
-    <span id="preview"></span>
-    <button onclick="addToList()" id="addButton">Add to List</button>
-    <button onclick="copyList()">Copy All</button>
-    <button onclick="clearList()">Clear List</button>
-
-    <textarea id="list" readonly placeholder="Your added lots will appear here..."></textarea>
+    <textarea id="list" placeholder="Your added lots will appear here..."></textarea>
   </div>
 
   <script>
     const prefixInput = document.getElementById("prefix");
     const bodyInput = document.getElementById("body");
     const machineSelect = document.getElementById("machine");
+    const expirationInput = document.getElementById("expiration");
     const previewDiv = document.getElementById("preview");
     const listTextarea = document.getElementById("list");
 
     function getLotAndMachine() {
       let rawPrefix = prefixInput.value.trim().toUpperCase();
       const body = bodyInput.value.trim();
+      const expiration = expirationInput.value.trim();
       const prefixMain = rawPrefix.substring(0, 2);
       const suffixFromPrefix = rawPrefix.length >= 3 ? rawPrefix.charAt(2) : '';
       const lot = `${prefixMain}${body}${suffixFromPrefix}`;
       const machine = machineSelect.value;
-      return { lot, machine };
+      return { lot, machine, expiration };
     }
 
     function updatePreview() {
-      const { lot, machine } = getLotAndMachine();
-      if (lot && machine) {
-        previewDiv.textContent = `Preview: ${lot}\t${machine}`;
+      const { lot, machine, expiration } = getLotAndMachine();
+      if (lot && machine && expiration) {
+        previewDiv.textContent = `Preview: ${lot}\t${machine}\t${expiration}`;
       } else {
         previewDiv.textContent = "";
       }
     }
 
     function addToList() {
-      const { lot, machine } = getLotAndMachine();
-      if (lot && bodyInput.value.trim()) {
-        listTextarea.value += `${lot}\t${machine}\n`;
+      const { lot, machine, expiration } = getLotAndMachine();
+      if (lot && bodyInput.value.trim() && expiration.length === 2) {
+        listTextarea.value += `${lot}\t${machine}\t${expiration}\n`;
         previewDiv.textContent = "✔️ Added to list";
-        previewDiv.style.backgroundColor = "#ccf2d1"; // subtle green
         prefixInput.value = "";
         prefixInput.focus();
         updatePreview();
-        setTimeout(() => {
-          previewDiv.style.backgroundColor = "#d9f0ff"; // revert
-        }, 500);
       }
     }
 
     function copyList() {
       listTextarea.select();
       document.execCommand("copy");
-      previewDiv.textContent = "✅ Copied to clipboard";
-      previewDiv.style.backgroundColor = "#fffa9e"; // yellow highlight
-      setTimeout(() => {
-        updatePreview(); // reset preview to current lot
-        previewDiv.style.backgroundColor = "#d9f0ff"; // revert
-      }, 1000);
     }
 
-    function clearList() {
-      listTextarea.value = "";
-      previewDiv.textContent = "🗑️ Cleared list";
-    }
-
-    // Event listeners
-    [prefixInput, bodyInput, machineSelect].forEach(el => {
+    [prefixInput, bodyInput, machineSelect, expirationInput].forEach(el => {
       el.addEventListener("input", updatePreview);
       el.addEventListener("change", updatePreview);
     });
 
-    document.addEventListener("DOMContentLoaded", () => {
-      prefixInput.focus();
-      updatePreview();
-    });
-
     document.addEventListener("keydown", function(e) {
-      if (e.key === "Enter" && (document.activeElement === prefixInput || document.activeElement === bodyInput)) {
+      if (e.key === "Enter" && document.activeElement.tagName !== "TEXTAREA") {
         e.preventDefault();
         addToList();
       }
     });
+
+    updatePreview();
   </script>
 </body>
 </html>
