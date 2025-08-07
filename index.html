@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Lot Number Generator</title>
+  <title>Line Batchs</title>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -66,11 +66,35 @@
     #preview {
       font-weight: bold;
       font-size: 18px;
-      margin: 10px 0;
+      margin: 10px 0 5px;
       padding: 8px;
       background-color: #d9f0ff;
       border-radius: 8px;
       color: #003366;
+    }
+
+    #lotDisplay {
+      display: block;
+      font-weight: bold;
+      font-size: 18px;
+      margin-top: 5px;
+      color: #004c99;
+      background-color: #f2f9ff;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    #lotDisplay:hover {
+      background-color: #e0f0ff;
+    }
+
+    #copyNotice {
+      font-size: 14px;
+      color: green;
+      display: none;
+      margin-top: 4px;
     }
 
     #list {
@@ -143,6 +167,9 @@
       </div>
 
       <span id="preview"></span>
+      <span id="lotDisplay" title="Click to copy LOT #"></span>
+      <div id="copyNotice">Copied!</div>
+
       <button type="submit">Add to List</button>
       <button type="button" onclick="copyList()">Copy All</button>
     </form>
@@ -156,6 +183,8 @@
     const machineSelect = document.getElementById("machine");
     const expirationInput = document.getElementById("expiration");
     const previewDiv = document.getElementById("preview");
+    const lotDisplay = document.getElementById("lotDisplay");
+    const copyNotice = document.getElementById("copyNotice");
     const listTextarea = document.getElementById("list");
 
     function getLotAndMachine() {
@@ -173,8 +202,10 @@
       const { lot, machine, expiration } = getLotAndMachine();
       if (lot && machine && expiration) {
         previewDiv.textContent = `Preview: ${lot}\t${machine}\t${expiration}`;
+        lotDisplay.textContent = `LOT #: ${lot}`;
       } else {
         previewDiv.textContent = "";
+        lotDisplay.textContent = "";
       }
     }
 
@@ -183,6 +214,7 @@
       if (lot && bodyInput.value.trim() && expiration.length === 2) {
         listTextarea.value += `${lot}\t${machine}\t${expiration}\n`;
         previewDiv.textContent = "✔️ Added to list";
+        lotDisplay.textContent = "";
         prefixInput.value = "";
         prefixInput.focus();
         updatePreview();
@@ -193,6 +225,18 @@
       listTextarea.select();
       document.execCommand("copy");
     }
+
+    lotDisplay.addEventListener("click", function() {
+      const lotText = lotDisplay.textContent.trim();  // <-- Include the "LOT #: " prefix now
+      if (lotText) {
+        navigator.clipboard.writeText(lotText).then(() => {
+          copyNotice.style.display = "block";
+          setTimeout(() => {
+            copyNotice.style.display = "none";
+          }, 1000);
+        });
+      }
+    });
 
     [prefixInput, bodyInput, machineSelect, expirationInput].forEach(el => {
       el.addEventListener("input", updatePreview);
@@ -210,4 +254,3 @@
   </script>
 </body>
 </html>
-
