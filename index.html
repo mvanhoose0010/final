@@ -220,7 +220,18 @@
         updatePreview();
       }
     }
-
+function addToList() {
+  const { lot, machine, expiration } = getLotAndMachine();
+  if (lot && bodyInput.value.trim() && expiration.length === 2) {
+    listTextarea.value += `${lot}\t${machine}\t${expiration}\n`;
+    previewDiv.textContent = "Added to list";
+    lotDisplay.textContent = "";
+    prefixInput.value = "";
+    prefixInput.focus();
+    machineSelect.value = ""; // <-- Clear the machine selection after adding
+    updatePreview();
+  }
+}
     function copyList() {
       listTextarea.select();
       document.execCommand("copy");
