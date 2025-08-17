@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Line Batchs</title>
   <style>
-    /* ===== Background Gradient ===== */
     body {
       font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
       margin: 0;
@@ -15,8 +14,6 @@
       justify-content: center;
       align-items: center;
     }
-
-    /* ===== Main Container ===== */
     .container {
       background: rgba(255, 255, 255, 0.9);
       backdrop-filter: blur(10px);
@@ -26,25 +23,19 @@
       width: 100%;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
     }
-
     h2 {
       font-weight: 300;
       font-size: 26px;
       margin-bottom: 25px;
       text-align: center;
       color: #333;
-      letter-spacing: 0.5px;
     }
-
-    /* ===== Row Layout ===== */
     .row {
       display: flex;
       gap: 1rem;
       margin-bottom: 1rem;
       flex-wrap: wrap;
     }
-
-    /* ===== Field Styling ===== */
     .field {
       flex: 1;
       min-width: 100px;
@@ -58,15 +49,12 @@
       font-size: 14px;
       color: #555;
     }
-
-    /* ===== Inputs & Selects ===== */
     input, select, textarea {
       padding: 10px 12px;
       font-size: 15px;
       width: 100%;
       border: 1px solid #ccc;
       border-radius: 8px;
-      box-sizing: border-box;
       background: #fff;
       transition: all 0.2s ease;
     }
@@ -75,8 +63,6 @@
       box-shadow: 0 0 0 3px rgba(110, 45, 192, 0.2);
       outline: none;
     }
-
-    /* ===== Preview & Lot Display ===== */
     #preview {
       font-weight: 500;
       font-size: 16px;
@@ -108,8 +94,6 @@
       display: none;
       margin-top: 4px;
     }
-
-    /* ===== Textarea ===== */
     #list {
       width: 100%;
       height: 200px;
@@ -120,8 +104,6 @@
       padding: 10px;
       background-color: #fafafa;
     }
-
-    /* ===== Buttons ===== */
     button {
       padding: 10px 18px;
       margin: 10px 8px 10px 0;
@@ -138,6 +120,19 @@
       transform: translateY(-1px);
       background: linear-gradient(135deg, #5a24a4, #7533d4);
     }
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-top: 6px;
+    }
+    .checkbox-group label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+      color: #555;
+    }
   </style>
 </head>
 <body>
@@ -150,8 +145,9 @@
           <input type="text" id="prefix" maxlength="3" placeholder="e.g. PAX" tabindex="1">
         </div>
         <div class="field">
-          <label for="body">Body</label>
-          <input type="text" id="body" placeholder="e.g. 080425" tabindex="2">
+          <label for="body">Body (auto-filled by calendar)</label>
+          <input type="text" id="body" placeholder="mmddyy1" tabindex="2" readonly>
+          <input type="date" id="calendar">
         </div>
         <div class="field small">
           <label for="expiration">Exp. Month</label>
@@ -178,6 +174,15 @@
           </select>
         </div>
       </div>
+      <div class="row">
+        <div class="field">
+          <label>Controlled Document?</label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="cdYes"> Yes</label>
+            <label><input type="checkbox" id="cdNo"> No</label>
+          </div>
+        </div>
+      </div>
       <span id="preview"></span>
       <span id="lotDisplay" title="Click to copy LOT #"></span>
       <div id="copyNotice">Copied!</div>
@@ -196,22 +201,57 @@
     const lotDisplay = document.getElementById("lotDisplay");
     const copyNotice = document.getElementById("copyNotice");
     const listTextarea = document.getElementById("list");
+    const calendarInput = document.getElementById("calendar");
+    const cdYes = document.getElementById("cdYes");
+    const cdNo = document.getElementById("cdNo");
+
+    function formatDateToMMDDYY1(dateStr) {
+      const [year, month, day] = dateStr.split("-");
+      const mm = month.padStart(2, "0");
+      const dd = day.padStart(2, "0");
+      const yy = year.slice(-2);
+      return `${mm}${dd}${yy}1`;
+    }
+
+    calendarInput.addEventListener("change", function() {
+      if (this.value) {
+        bodyInput.value = formatDateToMMDDYY1(this.value);
+        updatePreview();
+      }
+    });
+
+    // Make Yes/No act like radio buttons
+    cdYes.addEventListener("change", () => {
+      if (cdYes.checked) cdNo.checked = false;
+      updatePreview();
+    });
+    cdNo.addEventListener("change", () => {
+      if (cdNo.checked) cdYes.checked = false;
+      updatePreview();
+    });
+
+    function getControlledDoc() {
+      if (cdYes.checked) return "Yes";
+      if (cdNo.checked) return "No";
+      return "";
+    }
 
     function getLotAndMachine() {
       let rawPrefix = prefixInput.value.trim().toUpperCase();
       const body = bodyInput.value.trim();
       const expiration = expirationInput.value.trim();
+      const cd = getControlledDoc();
       const prefixMain = rawPrefix.substring(0, 2);
       const suffixFromPrefix = rawPrefix.length >= 3 ? rawPrefix.charAt(2) : '';
       const lot = `${prefixMain}${body}${suffixFromPrefix}`;
       const machine = machineSelect.value;
-      return { lot, machine, expiration };
+      return { lot, machine, expiration, cd };
     }
 
     function updatePreview() {
-      const { lot, machine, expiration } = getLotAndMachine();
+      const { lot, machine, expiration, cd } = getLotAndMachine();
       if (lot && machine && expiration) {
-        previewDiv.textContent = `Preview: ${lot}\t${machine}\t${expiration}`;
+        previewDiv.textContent = `Preview: ${lot}\t${machine}\t${expiration}\t${cd}`;
         lotDisplay.textContent = `LOT #: ${lot}`;
       } else {
         previewDiv.textContent = "";
@@ -220,9 +260,9 @@
     }
 
     function addToList() {
-      const { lot, machine, expiration } = getLotAndMachine();
+      const { lot, machine, expiration, cd } = getLotAndMachine();
       if (lot && bodyInput.value.trim() && expiration.length === 2) {
-        listTextarea.value += `${lot}\t${machine}\t${expiration}\n`;
+        listTextarea.value += `${lot}\t${machine}\t${expiration}\t${cd}\n`;
         previewDiv.textContent = "✔️ Added to list";
         lotDisplay.textContent = "";
         prefixInput.value = "";
@@ -265,4 +305,3 @@
   </script>
 </body>
 </html>
-
