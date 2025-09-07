@@ -150,8 +150,10 @@
           <input type="date" id="calendar">
         </div>
         <div class="field small">
-          <label for="expiration">Exp. Month</label>
+          <label for="expiration">Exp. (Months)</label>
           <input type="text" id="expiration" maxlength="2" placeholder="MM" tabindex="3">
+          <button type="button" onclick="convertExpiration()">Convert</button>
+          <input type="text" id="convertedExp" placeholder="YYYY-MM-DD" readonly>
         </div>
       </div>
       <div class="row">
@@ -197,6 +199,7 @@
     const bodyInput = document.getElementById("body");
     const machineSelect = document.getElementById("machine");
     const expirationInput = document.getElementById("expiration");
+    const convertedExpInput = document.getElementById("convertedExp");
     const previewDiv = document.getElementById("preview");
     const lotDisplay = document.getElementById("lotDisplay");
     const copyNotice = document.getElementById("copyNotice");
@@ -220,6 +223,34 @@
       }
     });
 
+    // Convert Expiration Months -> YYYY-MM-DD
+    function convertExpiration() {
+      const calendarValue = calendarInput.value;
+      const monthsToAdd = parseInt(expirationInput.value, 10);
+
+      if (!calendarValue || isNaN(monthsToAdd)) {
+        alert("Please select a calendar date and enter a valid month count.");
+        return;
+      }
+
+      const [year, month, day] = calendarValue.split("-").map(Number);
+      const baseDate = new Date(year, month - 1, day);
+      const originalDay = baseDate.getDate();
+
+      baseDate.setMonth(baseDate.getMonth() + monthsToAdd);
+
+      if (baseDate.getDate() < originalDay) {
+        baseDate.setDate(0);
+      }
+
+      const yyyy = baseDate.getFullYear();
+      const mm = String(baseDate.getMonth() + 1).padStart(2, "0");
+      const dd = String(baseDate.getDate()).padStart(2, "0");
+
+      convertedExpInput.value = `${yyyy}-${mm}-${dd}`;
+      updatePreview();
+    }
+
     // Make Yes/No act like radio buttons
     cdYes.addEventListener("change", () => {
       if (cdYes.checked) cdNo.checked = false;
@@ -239,7 +270,7 @@
     function getLotAndMachine() {
       let rawPrefix = prefixInput.value.trim().toUpperCase();
       const body = bodyInput.value.trim();
-      const expiration = expirationInput.value.trim();
+      const expiration = convertedExpInput.value.trim();
       const cd = getControlledDoc();
       const prefixMain = rawPrefix.substring(0, 2);
       const suffixFromPrefix = rawPrefix.length >= 3 ? rawPrefix.charAt(2) : '';
@@ -261,13 +292,17 @@
 
     function addToList() {
       const { lot, machine, expiration, cd } = getLotAndMachine();
-      if (lot && bodyInput.value.trim() && expiration.length === 2) {
+      if (lot && bodyInput.value.trim() && expiration) {
         listTextarea.value += `${lot}\t${machine}\t${expiration}\t${cd}\n`;
         previewDiv.textContent = "✔️ Added to list";
         lotDisplay.textContent = "";
+        
+        // Reset fields
         prefixInput.value = "";
         prefixInput.focus();
         machineSelect.value = "";
+        expirationInput.value = "";
+        convertedExpInput.value = "";
         updatePreview();
       }
     }
@@ -289,7 +324,7 @@
       }
     });
 
-    [prefixInput, bodyInput, machineSelect, expirationInput].forEach(el => {
+    [prefixInput, bodyInput, machineSelect, expirationInput, convertedExpInput].forEach(el => {
       el.addEventListener("input", updatePreview);
       el.addEventListener("change", updatePreview);
     });
