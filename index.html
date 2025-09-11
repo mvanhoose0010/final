@@ -227,7 +227,6 @@
     const cdNo = document.getElementById("cdNo");
     const expCounterList = document.getElementById("expCounter");
 
-    // store { "12": { count: 3, dates: ["2026-09-10", "2026-09-15", ...] }, ... }
     let expData = {};  
 
     function updateExpCounter() {
@@ -236,13 +235,12 @@
         const li = document.createElement("li");
         li.textContent = `${data.count} × ${months}mo `;
 
-        // Copy button
         const btn = document.createElement("button");
         btn.textContent = "📋 Copy Dates";
         btn.addEventListener("click", () => {
-          const textToCopy = data.dates.join("\n");
-          navigator.clipboard.writeText(textToCopy).then(() => {
-          });
+          const uniqueDates = [...new Set(data.dates)];
+          const textToCopy = uniqueDates.join("\n");
+          navigator.clipboard.writeText(textToCopy);
         });
 
         li.appendChild(btn);
@@ -279,10 +277,7 @@
       const originalDay = baseDate.getDate();
 
       baseDate.setMonth(baseDate.getMonth() + monthsToAdd);
-
-      if (baseDate.getDate() < originalDay) {
-        baseDate.setDate(0);
-      }
+      if (baseDate.getDate() < originalDay) baseDate.setDate(0);
 
       const yyyy = baseDate.getFullYear();
       const mm = String(baseDate.getMonth() + 1).padStart(2, "0");
@@ -323,7 +318,7 @@
     function updatePreview() {
       const { lot, machine, expiration, expMonths, cd } = getLotAndMachine();
       if (lot && machine && expiration) {
-        previewDiv.textContent = `Preview: ${lot}\t${machine}\tExp: ${expMonths}mo (${expiration})\t${cd}`;
+        previewDiv.textContent = `Preview: ${lot}\t${machine}\tExp: ${expMonths}mo\t${expiration}\t${cd}`;
         lotDisplay.textContent = `LOT #: ${lot}`;
       } else {
         previewDiv.textContent = "";
@@ -334,11 +329,10 @@
     function addToList() {
       const { lot, machine, expiration, expMonths, cd } = getLotAndMachine();
       if (lot && bodyInput.value.trim() && expiration) {
-        listTextarea.value += `${lot}\t${machine}\tExp: ${expMonths}mo (${expiration})\t${cd}\n`;
+        listTextarea.value += `${lot}\t${machine}\tExp: ${expMonths}mo\t${expiration}\t${cd}\n`;
         previewDiv.textContent = "✔️ Added to list";
         lotDisplay.textContent = "";
 
-        // Update expData
         if (expMonths) {
           if (!expData[expMonths]) {
             expData[expMonths] = { count: 0, dates: [] };
@@ -348,7 +342,6 @@
           updateExpCounter();
         }
 
-        // Reset fields
         prefixInput.value = "";
         prefixInput.focus();
         machineSelect.value = "";
