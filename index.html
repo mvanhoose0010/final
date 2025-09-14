@@ -57,6 +57,7 @@
       border-radius: 8px;
       background: #fff;
       transition: all 0.2s ease;
+      margin-bottom: 5px;
     }
     input:focus, select:focus, textarea:focus {
       border-color: #6e2dc0;
@@ -64,13 +65,11 @@
       outline: none;
     }
 
-    /* Updated: preview and lot side by side */
     #previewRow {
       display: flex;
       gap: 20px;
       margin: 20px 0;
     }
-
     #preview {
       font-weight: 500;
       font-size: 18px;
@@ -183,7 +182,7 @@
         </div>
       </div>
 
-      <!-- NEW: Supplemental fields -->
+      <!-- NEW: Supplemental fields with double-key verification -->
       <div class="row">
         <div class="field">
           <label for="productName">Product Name</label>
@@ -192,14 +191,15 @@
         <div class="field">
           <label for="wip">WIP</label>
           <input type="text" id="wip" placeholder="Enter WIP">
+          <input type="text" id="wipConfirm" placeholder="Re-enter WIP">
         </div>
         <div class="field">
           <label for="productNum">Product #</label>
           <input type="text" id="productNum" placeholder="Enter product number">
+          <input type="text" id="productNumConfirm" placeholder="Re-enter product number">
         </div>
       </div>
 
-      <!-- UPDATED: Dropdown instead of checkboxes -->
       <div class="row">
         <div class="field small">
           <label for="controlledDoc">Controlled Document?</label>
@@ -211,7 +211,6 @@
         </div>
       </div>
 
-      <!-- UPDATED: preview and lot side by side -->
       <div id="previewRow">
         <span id="preview"></span>
         <span id="lotDisplay" title="Click to copy LOT #"></span>
@@ -239,7 +238,9 @@
     const controlledDocSelect = document.getElementById("controlledDoc");
     const productNameInput = document.getElementById("productName");
     const wipInput = document.getElementById("wip");
+    const wipConfirmInput = document.getElementById("wipConfirm");            // NEW
     const productNumInput = document.getElementById("productNum");
+    const productNumConfirmInput = document.getElementById("productNumConfirm"); // NEW
 
     function formatDateToMMDDYY1(dateStr) {
       const [year, month, day] = dateStr.split("-");
@@ -311,16 +312,31 @@
 
     function addToList() {
       const d = getLotData();
+
+      // NEW: Double-key verification
+      if (wipInput.value.trim() !== wipConfirmInput.value.trim()) {
+        alert("WIP entries do not match. Please re-enter.");
+        return;
+      }
+      if (productNumInput.value.trim() !== productNumConfirmInput.value.trim()) {
+        alert("Product # entries do not match. Please re-enter.");
+        return;
+      }
+
       if (d.lot && d.expiration) {
         listTextarea.value += `${d.lot}\t${d.machine}\tExp: ${d.expMonths}mo\t${d.expiration}\t${d.cd}\t${d.productName}\t${d.wip}\t${d.productNum}\n`;
         previewDiv.textContent = "✔️ Added to list";
         lotDisplay.textContent = "";
+
         prefixInput.value = "";
         expirationInput.value = "";
         convertedExpInput.value = "";
         productNameInput.value = "";
         wipInput.value = "";
+        wipConfirmInput.value = "";              // NEW: clear confirm
         productNumInput.value = "";
+        productNumConfirmInput.value = "";       // NEW: clear confirm
+
         updatePreview();
       }
     }
@@ -340,7 +356,7 @@
       }
     });
 
-    [prefixInput, bodyInput, machineSelect, expirationInput, convertedExpInput, productNameInput, wipInput, productNumInput]
+    [prefixInput, bodyInput, machineSelect, expirationInput, convertedExpInput, productNameInput, wipInput, wipConfirmInput, productNumInput, productNumConfirmInput]
       .forEach(el => {
         el.addEventListener("input", updatePreview);
         el.addEventListener("change", updatePreview);
