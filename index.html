@@ -71,6 +71,7 @@
       background-color: #f4f6fa;
       border-radius: 8px;
       color: #444;
+      white-space: pre-wrap;
     }
     #lotDisplay {
       display: block;
@@ -103,6 +104,7 @@
       border-radius: 8px;
       padding: 10px;
       background-color: #fafafa;
+      white-space: pre;
     }
     button {
       padding: 10px 18px;
@@ -119,31 +121,6 @@
     button:hover {
       transform: translateY(-1px);
       background: linear-gradient(135deg, #5a24a4, #7533d4);
-    }
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      margin-top: 6px;
-    }
-    .checkbox-group label {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 14px;
-      color: #555;
-    }
-    #counterBox button {
-      background: #eee;
-      border: 1px solid #aaa;
-      border-radius: 6px;
-      padding: 2px 8px;
-      font-size: 12px;
-      cursor: pointer;
-      color: #333;
-    }
-    #counterBox button:hover {
-      background: #ddd;
     }
   </style>
 </head>
@@ -168,6 +145,7 @@
           <input type="text" id="convertedExp" placeholder="YYYY-MM-DD" readonly>
         </div>
       </div>
+
       <div class="row">
         <div class="field">
           <label for="machine">Machine</label>
@@ -188,28 +166,41 @@
           </select>
         </div>
       </div>
+
+      <!-- NEW: Supplemental fields -->
+      <div class="row">
+        <div class="field">
+          <label for="productName">Product Name</label>
+          <input type="text" id="productName" placeholder="Enter product name">
+        </div>
+        <div class="field">
+          <label for="wip">WIP</label>
+          <input type="text" id="wip" placeholder="Enter WIP">
+        </div>
+        <div class="field">
+          <label for="productNum">Product #</label>
+          <input type="text" id="productNum" placeholder="Enter product number">
+        </div>
+      </div>
+
       <div class="row">
         <div class="field">
           <label>Controlled Document?</label>
-          <div class="checkbox-group">
+          <div>
             <label><input type="checkbox" id="cdYes"> Yes</label>
             <label><input type="checkbox" id="cdNo"> No</label>
           </div>
         </div>
       </div>
+
       <span id="preview"></span>
       <span id="lotDisplay" title="Click to copy LOT #"></span>
       <div id="copyNotice">Copied!</div>
       <button type="submit">Add to List</button>
       <button type="button" onclick="copyList()">Copy All</button>
     </form>
-    <textarea id="list" placeholder="Your added lots will appear here..."></textarea>
 
-    <!-- Counter box -->
-    <div id="counterBox" style="margin-top:20px; padding:10px; background:#f4f6fa; border-radius:8px;">
-      <h3 style="margin:0 0 8px 0; font-size:16px; color:#333;">Expiration Month Counts</h3>
-      <ul id="expCounter" style="list-style:none; padding-left:0; margin:0; font-family:monospace; color:#444;"></ul>
-    </div>
+    <textarea id="list" placeholder="Your added lots will appear here..."></textarea>
   </div>
 
   <script>
@@ -225,28 +216,9 @@
     const calendarInput = document.getElementById("calendar");
     const cdYes = document.getElementById("cdYes");
     const cdNo = document.getElementById("cdNo");
-    const expCounterList = document.getElementById("expCounter");
-
-    let expData = {};  
-
-    function updateExpCounter() {
-      expCounterList.innerHTML = "";
-      for (const [months, data] of Object.entries(expData)) {
-        const li = document.createElement("li");
-        li.textContent = `${data.count} × ${months}mo `;
-
-        const btn = document.createElement("button");
-        btn.textContent = "📋 Copy Dates";
-        btn.addEventListener("click", () => {
-          const uniqueDates = [...new Set(data.dates)];
-          const textToCopy = uniqueDates.join("\n");
-          navigator.clipboard.writeText(textToCopy);
-        });
-
-        li.appendChild(btn);
-        expCounterList.appendChild(li);
-      }
-    }
+    const productNameInput = document.getElementById("productName");
+    const wipInput = document.getElementById("wip");
+    const productNumInput = document.getElementById("productNum");
 
     function formatDateToMMDDYY1(dateStr) {
       const [year, month, day] = dateStr.split("-");
@@ -266,35 +238,24 @@
     function convertExpiration() {
       const calendarValue = calendarInput.value;
       const monthsToAdd = parseInt(expirationInput.value, 10);
-
       if (!calendarValue || isNaN(monthsToAdd)) {
         alert("Please select a calendar date and enter a valid month count.");
         return;
       }
-
       const [year, month, day] = calendarValue.split("-").map(Number);
       const baseDate = new Date(year, month - 1, day);
       const originalDay = baseDate.getDate();
-
       baseDate.setMonth(baseDate.getMonth() + monthsToAdd);
       if (baseDate.getDate() < originalDay) baseDate.setDate(0);
-
       const yyyy = baseDate.getFullYear();
       const mm = String(baseDate.getMonth() + 1).padStart(2, "0");
       const dd = String(baseDate.getDate()).padStart(2, "0");
-
       convertedExpInput.value = `${yyyy}-${mm}-${dd}`;
       updatePreview();
     }
 
-    cdYes.addEventListener("change", () => {
-      if (cdYes.checked) cdNo.checked = false;
-      updatePreview();
-    });
-    cdNo.addEventListener("change", () => {
-      if (cdNo.checked) cdYes.checked = false;
-      updatePreview();
-    });
+    cdYes.addEventListener("change", () => { if (cdYes.checked) cdNo.checked = false; updatePreview(); });
+    cdNo.addEventListener("change", () => { if (cdNo.checked) cdYes.checked = false; updatePreview(); });
 
     function getControlledDoc() {
       if (cdYes.checked) return "Yes";
@@ -302,8 +263,8 @@
       return "";
     }
 
-    function getLotAndMachine() {
-      let rawPrefix = prefixInput.value.trim().toUpperCase();
+    function getLotData() {
+      const rawPrefix = prefixInput.value.trim().toUpperCase();
       const body = bodyInput.value.trim();
       const expiration = convertedExpInput.value.trim();
       const expMonths = expirationInput.value.trim();
@@ -312,14 +273,18 @@
       const suffixFromPrefix = rawPrefix.length >= 3 ? rawPrefix.charAt(2) : '';
       const lot = `${prefixMain}${body}${suffixFromPrefix}`;
       const machine = machineSelect.value;
-      return { lot, machine, expiration, expMonths, cd };
+      const productName = productNameInput.value.trim();
+      const wip = wipInput.value.trim();
+      const productNum = productNumInput.value.trim();
+      return { lot, machine, expiration, expMonths, cd, productName, wip, productNum };
     }
 
     function updatePreview() {
-      const { lot, machine, expiration, expMonths, cd } = getLotAndMachine();
-      if (lot && machine && expiration) {
-        previewDiv.textContent = `Preview: ${lot}\t${machine}\tExp: ${expMonths}mo\t${expiration}\t${cd}`;
-        lotDisplay.textContent = `LOT #: ${lot}`;
+      const d = getLotData();
+      if (d.lot && d.machine && d.expiration) {
+        previewDiv.textContent =
+          `Preview: ${d.lot}\t${d.machine}\tExp: ${d.expMonths}mo\t${d.expiration}\t${d.cd}\nProduct: ${d.productName}\tWIP: ${d.wip}\tProduct#: ${d.productNum}`;
+        lotDisplay.textContent = `LOT #: ${d.lot}`;
       } else {
         previewDiv.textContent = "";
         lotDisplay.textContent = "";
@@ -327,26 +292,17 @@
     }
 
     function addToList() {
-      const { lot, machine, expiration, expMonths, cd } = getLotAndMachine();
-      if (lot && bodyInput.value.trim() && expiration) {
-        listTextarea.value += `${lot}\t${machine}\tExp: ${expMonths}mo\t${expiration}\t${cd}\n`;
+      const d = getLotData();
+      if (d.lot && d.expiration) {
+        listTextarea.value += `${d.lot}\t${d.machine}\tExp: ${d.expMonths}mo\t${d.expiration}\t${d.cd}\t${d.productName}\t${d.wip}\t${d.productNum}\n`;
         previewDiv.textContent = "✔️ Added to list";
         lotDisplay.textContent = "";
-
-        if (expMonths) {
-          if (!expData[expMonths]) {
-            expData[expMonths] = { count: 0, dates: [] };
-          }
-          expData[expMonths].count++;
-          expData[expMonths].dates.push(expiration);
-          updateExpCounter();
-        }
-
         prefixInput.value = "";
-        prefixInput.focus();
-        machineSelect.value = "";
         expirationInput.value = "";
         convertedExpInput.value = "";
+        productNameInput.value = "";
+        wipInput.value = "";
+        productNumInput.value = "";
         updatePreview();
       }
     }
@@ -361,24 +317,16 @@
       if (lotText) {
         navigator.clipboard.writeText(lotText).then(() => {
           copyNotice.style.display = "block";
-          setTimeout(() => {
-            copyNotice.style.display = "none";
-          }, 1000);
+          setTimeout(() => copyNotice.style.display = "none", 1000);
         });
       }
     });
 
-    [prefixInput, bodyInput, machineSelect, expirationInput, convertedExpInput].forEach(el => {
-      el.addEventListener("input", updatePreview);
-      el.addEventListener("change", updatePreview);
-    });
-
-    document.addEventListener("keydown", function(e) {
-      if (e.key === "Enter" && document.activeElement.tagName !== "TEXTAREA") {
-        e.preventDefault();
-        addToList();
-      }
-    });
+    [prefixInput, bodyInput, machineSelect, expirationInput, convertedExpInput, productNameInput, wipInput, productNumInput]
+      .forEach(el => {
+        el.addEventListener("input", updatePreview);
+        el.addEventListener("change", updatePreview);
+      });
 
     updatePreview();
   </script>
