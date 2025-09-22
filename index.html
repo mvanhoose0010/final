@@ -182,7 +182,7 @@
         </div>
       </div>
 
-      <!-- NEW: Supplemental fields with double-key verification -->
+      <!-- Supplemental fields with double-key verification -->
       <div class="row">
         <div class="field">
           <label for="productName">Product Name</label>
@@ -219,6 +219,8 @@
       <div id="copyNotice">Copied!</div>
       <button type="submit">Add to List</button>
       <button type="button" onclick="copyList()">Copy All</button>
+      <!-- NEW: Reorder button -->
+      <button type="button" onclick="reorderList()">Reorder Output</button>
     </form>
 
     <textarea id="list" placeholder="Your added lots will appear here..."></textarea>
@@ -238,9 +240,9 @@
     const controlledDocSelect = document.getElementById("controlledDoc");
     const productNameInput = document.getElementById("productName");
     const wipInput = document.getElementById("wip");
-    const wipConfirmInput = document.getElementById("wipConfirm");            // NEW
+    const wipConfirmInput = document.getElementById("wipConfirm");
     const productNumInput = document.getElementById("productNum");
-    const productNumConfirmInput = document.getElementById("productNumConfirm"); // NEW
+    const productNumConfirmInput = document.getElementById("productNumConfirm");
 
     function formatDateToMMDDYY1(dateStr) {
       const [year, month, day] = dateStr.split("-");
@@ -313,7 +315,7 @@
     function addToList() {
       const d = getLotData();
 
-      // NEW: Double-key verification
+      // Double-key verification
       if (wipInput.value.trim() !== wipConfirmInput.value.trim()) {
         alert("WIP entries do not match. Please re-enter.");
         return;
@@ -333,9 +335,9 @@
         convertedExpInput.value = "";
         productNameInput.value = "";
         wipInput.value = "";
-        wipConfirmInput.value = "";              // NEW: clear confirm
+        wipConfirmInput.value = "";
         productNumInput.value = "";
-        productNumConfirmInput.value = "";       // NEW: clear confirm
+        productNumConfirmInput.value = "";
 
         updatePreview();
       }
@@ -344,6 +346,26 @@
     function copyList() {
       listTextarea.select();
       document.execCommand("copy");
+    }
+
+    // NEW: Reorder function
+    function reorderList() {
+      const lines = listTextarea.value.trim().split("\n");
+      const reordered = lines.map(line => {
+        const parts = line.split("\t");
+
+        // Original order: LOT, Machine, Exp: Xmo, ExpirationDate, CD, ProductName, WIP, ProductNum
+        const lot = parts[0] || "";
+        const expiration = parts[3] || "";
+        const expMonths = parts[2] ? parts[2].replace("Exp: ", "") : "";
+        const productName = parts[5] || "";
+        const wip = parts[6] || "";
+        const productNum = parts[7] || "";
+
+        return `${productName}\t${wip}\t${productNum}\t${lot}\t${expiration}\t${expMonths}`;
+      });
+
+      listTextarea.value = reordered.join("\n");
     }
 
     lotDisplay.addEventListener("click", function() {
