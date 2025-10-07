@@ -182,7 +182,7 @@
         </div>
       </div>
 
-      <!-- Supplemental fields with double-key verification -->
+      <!-- Supplemental fields -->
       <div class="row">
         <div class="field">
           <label for="productName">Product Name</label>
@@ -197,6 +197,18 @@
           <label for="productNum">Product #</label>
           <input type="text" id="productNum" placeholder="Enter product number">
           <input type="text" id="productNumConfirm" placeholder="Re-enter product number">
+        </div>
+      </div>
+
+      <!-- NEW: Color and Amount fields -->
+      <div class="row">
+        <div class="field">
+          <label for="color">Color</label>
+          <input type="text" id="color" placeholder="Enter color">
+        </div>
+        <div class="field small">
+          <label for="colorAmount">Amount</label>
+          <input type="number" id="colorAmount" placeholder="Qty">
         </div>
       </div>
 
@@ -219,7 +231,6 @@
       <div id="copyNotice">Copied!</div>
       <button type="submit">Add to List</button>
       <button type="button" onclick="copyList()">Copy All</button>
-      <!-- NEW: Reorder button -->
       <button type="button" onclick="reorderList()">Reorder Output</button>
     </form>
 
@@ -243,6 +254,8 @@
     const wipConfirmInput = document.getElementById("wipConfirm");
     const productNumInput = document.getElementById("productNum");
     const productNumConfirmInput = document.getElementById("productNumConfirm");
+    const colorInput = document.getElementById("color");
+    const colorAmountInput = document.getElementById("colorAmount");
 
     function formatDateToMMDDYY1(dateStr) {
       const [year, month, day] = dateStr.split("-");
@@ -282,8 +295,6 @@
       return controlledDocSelect.value;
     }
 
-    controlledDocSelect.addEventListener("change", updatePreview);
-
     function getLotData() {
       const rawPrefix = prefixInput.value.trim().toUpperCase();
       const body = bodyInput.value.trim();
@@ -297,14 +308,17 @@
       const productName = productNameInput.value.trim();
       const wip = wipInput.value.trim();
       const productNum = productNumInput.value.trim();
-      return { lot, machine, expiration, expMonths, cd, productName, wip, productNum };
+      const color = colorInput.value.trim();
+      const colorAmount = colorAmountInput.value.trim();
+      const lotDate = calendarInput.value || "";
+      return { lot, machine, expiration, expMonths, cd, productName, wip, productNum, color, colorAmount, lotDate };
     }
 
     function updatePreview() {
       const d = getLotData();
       if (d.lot && d.machine && d.expiration) {
         previewDiv.textContent =
-          `Preview: ${d.lot}\t${d.machine}\tExp: ${d.expMonths}mo\t${d.expiration}\t${d.cd}\nProduct: ${d.productName}\tWIP: ${d.wip}\tProduct#: ${d.productNum}`;
+          `Preview: ${d.lot}\t${d.machine}\tExp: ${d.expMonths}mo\t${d.expiration}\t${d.cd}\nProduct: ${d.productName}\tWIP: ${d.wip}\tProduct#: ${d.productNum}\nColor: ${d.color}\tAmount: ${d.colorAmount}\tLot Date: ${d.lotDate}`;
         lotDisplay.textContent = `LOT #: ${d.lot}`;
       } else {
         previewDiv.textContent = "";
@@ -315,29 +329,24 @@
     function addToList() {
       const d = getLotData();
 
-      // Double-key verification
       if (wipInput.value.trim() !== wipConfirmInput.value.trim()) {
-        alert("WIP entries do not match. Please re-enter.");
+        alert("WIP entries do not match.");
         return;
       }
       if (productNumInput.value.trim() !== productNumConfirmInput.value.trim()) {
-        alert("Product # entries do not match. Please re-enter.");
+        alert("Product # entries do not match.");
         return;
       }
 
       if (d.lot && d.expiration) {
-        listTextarea.value += `${d.lot}\t${d.machine}\tExp: ${d.expMonths}mo\t${d.expiration}\t${d.cd}\t${d.productName}\t${d.wip}\t${d.productNum}\n`;
+        listTextarea.value += `${d.lot}\t${d.machine}\tExp: ${d.expMonths}mo\t${d.expiration}\t${d.cd}\t${d.productName}\t${d.wip}\t${d.productNum}\t${d.color}\t${d.colorAmount}\t${d.lotDate}\n`;
         previewDiv.textContent = "✔️ Added to list";
         lotDisplay.textContent = "";
 
-        prefixInput.value = "";
-        expirationInput.value = "";
-        convertedExpInput.value = "";
-        productNameInput.value = "";
-        wipInput.value = "";
-        wipConfirmInput.value = "";
-        productNumInput.value = "";
-        productNumConfirmInput.value = "";
+        // Reset fields
+        [prefixInput, expirationInput, convertedExpInput, productNameInput,
+         wipInput, wipConfirmInput, productNumInput, productNumConfirmInput,
+         colorInput, colorAmountInput].forEach(el => el.value = "");
 
         updatePreview();
       }
@@ -348,27 +357,25 @@
       document.execCommand("copy");
     }
 
-    // NEW: Reorder function
     function reorderList() {
       const lines = listTextarea.value.trim().split("\n");
       const reordered = lines.map(line => {
         const parts = line.split("\t");
-
-        // Original order: LOT, Machine, Exp: Xmo, ExpirationDate, CD, ProductName, WIP, ProductNum
         const lot = parts[0] || "";
         const expiration = parts[3] || "";
         const expMonths = parts[2] ? parts[2].replace("Exp: ", "") : "";
         const productName = parts[5] || "";
         const wip = parts[6] || "";
         const productNum = parts[7] || "";
-
-        return `${productName}\t${wip}\t${productNum}\t${lot}\t${expiration}\t${expMonths}`;
+        const color = parts[8] || "";
+        const colorAmount = parts[9] || "";
+        const lotDate = parts[10] || "";
+        return `${productName}\t${wip}\t${productNum}\t${lot}\t${expiration}\t${expMonths}\t${color}\t${colorAmount}\t${lotDate}`;
       });
-
       listTextarea.value = reordered.join("\n");
     }
 
-    lotDisplay.addEventListener("click", function() {
+    lotDisplay.addEventListener("click", () => {
       const lotText = lotDisplay.textContent.trim();
       if (lotText) {
         navigator.clipboard.writeText(lotText).then(() => {
@@ -378,11 +385,10 @@
       }
     });
 
-    [prefixInput, bodyInput, machineSelect, expirationInput, convertedExpInput, productNameInput, wipInput, wipConfirmInput, productNumInput, productNumConfirmInput]
-      .forEach(el => {
-        el.addEventListener("input", updatePreview);
-        el.addEventListener("change", updatePreview);
-      });
+    document.querySelectorAll("input, select").forEach(el => {
+      el.addEventListener("input", updatePreview);
+      el.addEventListener("change", updatePreview);
+    });
 
     updatePreview();
   </script>
