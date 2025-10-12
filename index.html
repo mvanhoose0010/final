@@ -204,7 +204,12 @@
       <div class="row">
         <div class="field">
           <label for="color">Color</label>
-          <input type="text" id="color" placeholder="Enter color">
+          <select id="color">
+            <option value="">--Select Color--</option>
+            <option value="Orange">Orange</option>
+            <option value="Purple">Purple</option>
+            <option value="Yellow">Yellow</option>
+          </select>
         </div>
         <div class="field small">
           <label for="colorAmount">Amount</label>
@@ -254,7 +259,7 @@
     const wipConfirmInput = document.getElementById("wipConfirm");
     const productNumInput = document.getElementById("productNum");
     const productNumConfirmInput = document.getElementById("productNumConfirm");
-    const colorInput = document.getElementById("color");
+    const colorSelect = document.getElementById("color");
     const colorAmountInput = document.getElementById("colorAmount");
 
     function formatDateToMMDDYY1(dateStr) {
@@ -308,7 +313,7 @@
       const productName = productNameInput.value.trim();
       const wip = wipInput.value.trim();
       const productNum = productNumInput.value.trim();
-      const color = colorInput.value.trim();
+      const color = colorSelect.value.trim();
       const colorAmount = colorAmountInput.value.trim();
       const lotDate = calendarInput.value || "";
       return { lot, machine, expiration, expMonths, cd, productName, wip, productNum, color, colorAmount, lotDate };
@@ -344,10 +349,13 @@
         lotDisplay.textContent = "";
 
         // Reset fields
-        [prefixInput, expirationInput, convertedExpInput, productNameInput,
-         wipInput, wipConfirmInput, productNumInput, productNumConfirmInput,
-         colorInput, colorAmountInput].forEach(el => el.value = "");
+        [
+          prefixInput, expirationInput, convertedExpInput, productNameInput,
+          wipInput, wipConfirmInput, productNumInput, productNumConfirmInput,
+          colorAmountInput
+        ].forEach(el => el.value = "");
 
+        colorSelect.value = ""; // reset dropdown
         updatePreview();
       }
     }
