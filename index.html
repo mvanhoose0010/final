@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -63,6 +63,17 @@
       border-color: #6e2dc0;
       box-shadow: 0 0 0 3px rgba(110, 45, 192, 0.2);
       outline: none;
+    }
+
+    /* Highlighting empty/filled inputs */
+    input.invalid, select.invalid, textarea.invalid {
+      border: 2px solid #e53935;
+      background-color: #ffebee;
+    }
+
+    input.valid, select.valid, textarea.valid {
+      border: 2px solid #43a047;
+      background-color: #e8f5e9;
     }
 
     #previewRow {
@@ -165,6 +176,7 @@
         <div class="field">
           <label for="machine">Machine</label>
           <select id="machine" tabindex="4">
+            <option value="">--Select--</option>
             <option value="BAM1">BAM1</option>
             <option value="BAM2">BAM2</option>
             <option value="BR01">BR01</option>
@@ -182,7 +194,6 @@
         </div>
       </div>
 
-      <!-- Supplemental fields -->
       <div class="row">
         <div class="field">
           <label for="productName">Product Name</label>
@@ -200,7 +211,6 @@
         </div>
       </div>
 
-      <!-- NEW: Color and Amount fields -->
       <div class="row">
         <div class="field">
           <label for="color">Color</label>
@@ -348,15 +358,15 @@
         previewDiv.textContent = "✔️ Added to list";
         lotDisplay.textContent = "";
 
-        // Reset fields
         [
           prefixInput, expirationInput, convertedExpInput, productNameInput,
           wipInput, wipConfirmInput, productNumInput, productNumConfirmInput,
           colorAmountInput
         ].forEach(el => el.value = "");
 
-        colorSelect.value = ""; // reset dropdown
+        colorSelect.value = "";
         updatePreview();
+        validateFields(); // refresh highlight state
       }
     }
 
@@ -396,6 +406,26 @@
     document.querySelectorAll("input, select").forEach(el => {
       el.addEventListener("input", updatePreview);
       el.addEventListener("change", updatePreview);
+    });
+
+    // ---- Field validation highlight logic ----
+    function validateFields() {
+      document.querySelectorAll("input, select, textarea").forEach(el => {
+        if (el.hasAttribute("readonly")) return;
+        if (!el.value.trim()) {
+          el.classList.add("invalid");
+          el.classList.remove("valid");
+        } else {
+          el.classList.add("valid");
+          el.classList.remove("invalid");
+        }
+      });
+    }
+
+    validateFields();
+    document.querySelectorAll("input, select, textarea").forEach(el => {
+      el.addEventListener("input", validateFields);
+      el.addEventListener("change", validateFields);
     });
 
     updatePreview();
