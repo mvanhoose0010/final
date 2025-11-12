@@ -142,11 +142,17 @@
       color: white;
       background: linear-gradient(135deg, #6e2dc0, #8a4fff);
       cursor: pointer;
-      transition: transform 0.15s ease, background 0.3s ease;
+      transition: transform 0.15s ease, background 0.3s ease, box-shadow 0.3s ease;
     }
     button:hover {
       transform: translateY(-1px);
       background: linear-gradient(135deg, #5a24a4, #7533d4);
+    }
+
+    /* Reorder button active state */
+    #reorderButton.active {
+      background: linear-gradient(135deg, #4caf50, #66bb6a);
+      box-shadow: 0 0 10px rgba(76, 175, 80, 0.6);
     }
   </style>
 </head>
@@ -190,6 +196,7 @@
             <option value="HSMB">HSMB</option>
             <option value="HSMC">HSMC</option>
             <option value="Welders">Welders</option>
+            <option value="HSMC">PA01</option>
           </select>
         </div>
       </div>
@@ -246,7 +253,7 @@
       <div id="copyNotice">Copied!</div>
       <button type="submit">Add to List</button>
       <button type="button" onclick="copyList()">Copy All</button>
-      <button type="button" onclick="reorderList()">Reorder Output</button>
+      <button id="reorderButton" type="button" onclick="reorderList()">Placard Order</button>
     </form>
 
     <textarea id="list" placeholder="Your added lots will appear here..."></textarea>
@@ -271,6 +278,10 @@
     const productNumConfirmInput = document.getElementById("productNumConfirm");
     const colorSelect = document.getElementById("color");
     const colorAmountInput = document.getElementById("colorAmount");
+    const reorderButton = document.getElementById("reorderButton");
+
+    let isReordered = false;
+    let originalList = "";
 
     function formatDateToMMDDYY1(dateStr) {
       const [year, month, day] = dateStr.split("-");
@@ -376,21 +387,36 @@
     }
 
     function reorderList() {
-      const lines = listTextarea.value.trim().split("\n");
-      const reordered = lines.map(line => {
-        const parts = line.split("\t");
-        const lot = parts[0] || "";
-        const expiration = parts[3] || "";
-        const expMonths = parts[2] ? parts[2].replace("Exp: ", "") : "";
-        const productName = parts[5] || "";
-        const wip = parts[6] || "";
-        const productNum = parts[7] || "";
-        const color = parts[8] || "";
-        const colorAmount = parts[9] || "";
-        const lotDate = parts[10] || "";
-        return `${productName}\t${wip}\t${productNum}\t${lot}\t${expiration}\t${expMonths}\t${color}\t${colorAmount}\t${lotDate}`;
-      });
-      listTextarea.value = reordered.join("\n");
+      if (!isReordered) {
+        // Save original list and reorder
+        originalList = listTextarea.value.trim();
+        if (!originalList) return;
+
+        const lines = originalList.split("\n");
+        const reordered = lines.map(line => {
+          const parts = line.split("\t");
+          const lot = parts[0] || "";
+          const expiration = parts[3] || "";
+          const expMonths = parts[2] ? parts[2].replace("Exp: ", "") : "";
+          const productName = parts[5] || "";
+          const wip = parts[6] || "";
+          const productNum = parts[7] || "";
+          const color = parts[8] || "";
+          const colorAmount = parts[9] || "";
+          const lotDate = parts[10] || "";
+          return `${productName}\t${wip}\t${productNum}\t${lot}\t${expiration}\t${expMonths}\t${color}\t${colorAmount}\t${lotDate}`;
+        });
+        listTextarea.value = reordered.join("\n");
+        isReordered = true;
+        reorderButton.textContent = "Restore Original Order";
+        reorderButton.classList.add("active");
+      } else {
+        // Restore original list
+        listTextarea.value = originalList;
+        isReordered = false;
+        reorderButton.textContent = "Reorder Output";
+        reorderButton.classList.remove("active");
+      }
     }
 
     lotDisplay.addEventListener("click", () => {
