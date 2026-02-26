@@ -19,7 +19,7 @@
       backdrop-filter: blur(10px);
       padding: 30px 40px;
       border-radius: 20px;
-      max-width: 900px;
+      max-width: 1300px;
       width: 100%;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
     }
@@ -65,7 +65,6 @@
       outline: none;
     }
 
-    /* Highlighting empty/filled inputs */
     input.invalid, select.invalid, textarea.invalid {
       border: 2px solid #e53935;
       background-color: #ffebee;
@@ -74,6 +73,68 @@
     input.valid, select.valid, textarea.valid {
       border: 2px solid #43a047;
       background-color: #e8f5e9;
+    }
+
+    /* Toggle Switch */
+    .toggle-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+    .toggle-label {
+      font-size: 14px;
+      color: #555;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 52px;
+      height: 28px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      margin: 0;
+      padding: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #6e2dc0;
+      border-radius: 28px;
+      transition: background 0.3s ease;
+    }
+    .toggle-slider:before {
+      content: "";
+      position: absolute;
+      height: 20px;
+      width: 20px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      border-radius: 50%;
+      transition: transform 0.3s ease;
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      background-color: #f44336;
+    }
+    .toggle-switch input:checked + .toggle-slider:before {
+      transform: translateX(24px);
+    }
+    .toggle-badge {
+      font-size: 15px;
+      font-weight: 700;
+      color: #6e2dc0;
+      min-width: 18px;
+      transition: color 0.3s ease;
+    }
+    .toggle-badge.two {
+      color: #f44336;
     }
 
     #previewRow {
@@ -149,7 +210,6 @@
       background: linear-gradient(135deg, #5a24a4, #7533d4);
     }
 
-    /* Reorder button active state */
     #reorderButton.active {
       background: linear-gradient(135deg, #4caf50, #66bb6a);
       box-shadow: 0 0 10px rgba(76, 175, 80, 0.6);
@@ -169,6 +229,16 @@
           <label for="body">Body (auto-filled by calendar)</label>
           <input type="text" id="body" placeholder="mmddyy1" tabindex="2" readonly>
           <input type="date" id="calendar">
+          <!-- Suffix Toggle -->
+          <div class="toggle-wrapper" style="margin-top: 8px;">
+            <span class="toggle-label">Batch suffix:</span>
+            <span class="toggle-badge" id="suffixLabel1">1</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="suffixToggle">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-badge two" id="suffixLabel2">2</span>
+          </div>
         </div>
         <div class="field small">
           <label for="expiration">Exp. (Months)</label>
@@ -279,23 +349,34 @@
     const colorSelect = document.getElementById("color");
     const colorAmountInput = document.getElementById("colorAmount");
     const reorderButton = document.getElementById("reorderButton");
+    const suffixToggle = document.getElementById("suffixToggle");
 
     let isReordered = false;
     let originalList = "";
 
-    function formatDateToMMDDYY1(dateStr) {
+    function getBatchSuffix() {
+      return suffixToggle.checked ? "2" : "1";
+    }
+
+    function formatDateToMMDDYY(dateStr) {
       const [year, month, day] = dateStr.split("-");
       const mm = month.padStart(2, "0");
       const dd = day.padStart(2, "0");
       const yy = year.slice(-2);
-      return `${mm}${dd}${yy}1`;
+      return `${mm}${dd}${yy}`;
     }
 
-    calendarInput.addEventListener("change", function() {
-      if (this.value) {
-        bodyInput.value = formatDateToMMDDYY1(this.value);
+    function updateBodyField() {
+      if (calendarInput.value) {
+        bodyInput.value = formatDateToMMDDYY(calendarInput.value) + getBatchSuffix();
         updatePreview();
       }
+    }
+
+    calendarInput.addEventListener("change", updateBodyField);
+
+    suffixToggle.addEventListener("change", function() {
+      updateBodyField();
     });
 
     function convertExpiration() {
@@ -377,7 +458,7 @@
 
         colorSelect.value = "";
         updatePreview();
-        validateFields(); // refresh highlight state
+        validateFields();
       }
     }
 
@@ -388,7 +469,6 @@
 
     function reorderList() {
       if (!isReordered) {
-        // Save original list and reorder
         originalList = listTextarea.value.trim();
         if (!originalList) return;
 
@@ -411,7 +491,6 @@
         reorderButton.textContent = "Restore Original Order";
         reorderButton.classList.add("active");
       } else {
-        // Restore original list
         listTextarea.value = originalList;
         isReordered = false;
         reorderButton.textContent = "Reorder Output";
@@ -434,10 +513,10 @@
       el.addEventListener("change", updatePreview);
     });
 
-    // ---- Field validation highlight logic ----
     function validateFields() {
       document.querySelectorAll("input, select, textarea").forEach(el => {
         if (el.hasAttribute("readonly")) return;
+        if (el.type === "checkbox") return;
         if (!el.value.trim()) {
           el.classList.add("invalid");
           el.classList.remove("valid");
