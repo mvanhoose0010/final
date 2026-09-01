@@ -329,6 +329,7 @@
           <option value="HSMA">HSMA</option>
           <option value="HSMB">HSMB</option>
           <option value="HSMC">HSMC</option>
+          <option value="HSMD">HSMD</option>
           <option value="PA01">PA01</option>
           <option value="Welders">Welders</option>
         </select>
@@ -414,6 +415,19 @@ for (const r of MBR_DATA) {
   // Deduplicate by machine
   if (!byCode[r.Combined].some(x => x.Machine === r.Machine)) {
     byCode[r.Combined].push(r);
+  }
+}
+
+// Mirror every HSMA entry as HSMB / HSMC / HSMD choices too, using the
+// same product/WIP/SAP/expiration/placard data — only Machine differs.
+for (const code in byCode) {
+  const hsmaRow = byCode[code].find(r => r.Machine === 'HSMA');
+  if (hsmaRow) {
+    ['HSMB', 'HSMC', 'HSMD'].forEach(m => {
+      if (!byCode[code].some(r => r.Machine === m)) {
+        byCode[code].push({ ...hsmaRow, Machine: m });
+      }
+    });
   }
 }
 
